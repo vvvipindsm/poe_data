@@ -58,28 +58,35 @@ def main() -> None:
         symbols = config_data['symbols']
         for symbol, status in symbols.items():
             if symbol not in data_fetched:
-                print("symbol",symbol)
+                data_fetched.append(symbol)
+                # print("symbol",symbol)
                 res = data_handler.fetch_aapl_options_and_select_csp(min_unique_strikes=10)
                 if res:
                     # symbol_name = occ_local_symbol(res["symbol"], res["expiry"], res["right"], res["strike"])
-                    print("Selected option symbol:", res)
-                data_handler.initial_update_historical_data(symbol, end_date_time="")
-                data_fetched.append(symbol)
+                      option_df = data_handler.fetch_option_historical_data(
+                            conId=res["conId"],
+                            symbol=res["symbol"],
+                            end_date_time="",
+                            duration="1 D",
+                            bar_size="5 mins"
+                        )
+                # data_handler.initial_update_historical_data(symbol, end_date_time="")
+               
                 logger.info(f"Intial - {symbol}")
 
             if status == False:
                 continue
 
       
-            data_new, data_combined = data_handler.update_historical_data(symbol, end_date_time="")
+            # data_new, data_combined = data_handler.update_historical_data(symbol, end_date_time="")
 
     
-            data = data_combined.iloc[-300:]
+            # data = data_combined.iloc[-300:]
            
 
 
-            data_combined["status"] = status
-            data_handler.save_historical_data(symbol, data_combined)
+            # data_combined["status"] = status
+            # data_handler.save_historical_data(symbol, data_combined)
 
 
     #         time.sleep(2)

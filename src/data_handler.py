@@ -36,8 +36,43 @@ class DataHandler:
                               columns=["Date", "Open", "High", "Low", "Close", "Volume"])
         self.save_historical_data(symbol=symbol, data=data)
         logger.info(f"Loaded historical data successfull for {symbol} with {len(data)} samples")
+        
+    def fetch_option_historical_data(self, conId: int, symbol: str, end_date_time: str = "", duration: str = "1 D", bar_size: str = "5 mins"):
+        """
+        Fetch historical data for a given option contract by conId.
 
- 
+        :param conId: IB contract ID of the option
+        :param symbol: Symbol name (used for saving CSV)
+        :param end_date_time: End datetime (IB format: YYYYMMDD HH:MM:SS)
+        :param duration: IB duration string (e.g., '1 D', '5 D', '1 W')
+        :param bar_size: IB bar size (e.g., '5 mins', '1 hour')
+        """
+        from ib_insync import Contract
+
+        option_contract = Contract(conId=conId)
+        self.ib_client.ib.qualifyContracts(option_contract)
+
+        bars = self.ib_client.ib.reqHistoricalData(
+            option_contract,
+            endDateTime=end_date_time,
+            durationStr=duration,
+            barSizeSetting=bar_size,
+            whatToShow="OPTION",
+            useRTH=False,
+            formatDate=1
+        )
+
+        df = pd.DataFrame([[bar.date, bar.open, bar.high, bar.low, bar.close, bar.volume] for bar in bars],
+                        columns=["Date", "Open", "High", "Low", "Close", "Volume"])
+
+        # Save to CSV (naming file with symbol + conId so it's unique)
+        file_path = os.path.join(config.DATA_FOLDER, f"{symbol}_OPT_{conId}.csv")
+        df.to_csv(file_path, index=False)
+
+        logger.info(f"Saved option historical data for {symbol} (conId={conId}) with {len(df)} rows → {file_path}")
+        return df
+
+    
 
     def load_historical_data(self, symbol: str) -> pd.DataFrame:
         """
@@ -126,25 +161,21 @@ class DataHandler:
 
     # ---------- CORE: FETCH + PRINT + SELECT CSP ----------
     def fetch_aapl_options_and_select_csp(self, min_unique_strikes: int = 10):
-        """
-        1) Pull AAPL option chain for next/nearest Friday
-        2) Print >=min_unique_strikes strikes (both calls & puts) with right, bid/ask, IV
-        3) Select 1x cash-secured put: closest OTM strike below last. Compute mid-price.
-        """
+    
         ib = self.ib_client.ib
 
         # Underlying last price
         stock = Stock("AAPL", "SMART", "USD")
         print(stock)
-        print(stock)
+      
         ib.qualifyContracts(stock)
         [stkTicker] = ib.reqTickers(stock)
-        last = self._as_float(stkTicker.marketPrice())
-        if last is None or math.isnan(last):
-            last = self._as_float(stkTicker.last)
-        if last is None:
-            raise RuntimeError("Could not get AAPL last/market price. Ensure market data permissions/delayed data enabled.")
-
+        # last = self._as_float(stkTicker.marketPrice())
+        # if last is None or math.isnan(last):
+        #     last = self._as_float(stkTicker.last)
+        # if last is None:
+        #     raise RuntimeError("Could not get AAPL last/market price. Ensure market data permissions/delayed data enabled.")
+        last = 230.87
         # Option params (expirations/strikes)
         # Request option parameters
         params = ib.reqSecDefOptParams(
