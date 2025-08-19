@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trading Dashboard</title>
+  <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    #backtest-form {
+      margin: 20px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      width: 200px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .order-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .order-table th, .order-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+
+    .order-table th {
+      background-color: #f2f2f2;
+      text-align: left;
+    }
+    #order-section {
+      width: 100%;
+      background: #ffffff;
+      border-top: 1px solid #e0e0e0;
+      padding: 20px;
+      box-sizing: border-box;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .order-tabs {
+      display: flex;
+      justify-content: start;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      background: #f07777;
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: #e0e0e0;
+    }
+
+    .tab-btn.active {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    .tab-pane {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+.order-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+
+  .order-table th, .order-table td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  .order-table th {
+    background-color: #f0f0f0;
+  }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .tab-pane table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-pane th,
+    .tab-pane td {
+      padding: 12px;
+      border-bottom: 1px solid #8b5c5c;
+      text-align: left;
+    }
+
+    .tab-pane th {
+      background: #c65555;
+      font-weight: 600;
+    }
+
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+
+    .left-panel {
+      width: 400px;
+      padding: 30px;
+      background: #fff;
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+    }
+
+    .right-panel {
+      flex-grow: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    select,
+    button {
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    select {
+      width: 70%;
+      margin-right: 5px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .stock-item {
+      background: #007bff;
+      color: white;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stock-item span {
+      cursor: pointer;
+    }
+
+    .stop-btn {
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+    }
+
+    #chart-container {
+      flex-grow: 1;
+      min-height: 500px;
+      /* Ensure chart container is visible */
+    }
+
+    #selected-symbol {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div style="flex: 1; display: flex; overflow: hidden;">
+
+    <div class="left-panel">
+      <h1>Forex Trading Dashboard</h1>
+      <select id="stock-select">
+        <option value="" disabled selected>Select a symbol</option>
+      </select>
+      <button onclick="startTrading()">Start</button>
+
+      <h2 style="margin-top: 30px;">Active Stocks</h2>
+      <div id="stock-list"></div>
+    </div>
+
+    <div class="right-panel">
+      <!-- MA Toggle and Legend Panel
+  <div id="ma-controls" style="margin-bottom: 10px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+  <label style="color: blue;"><input type="checkbox" checked onchange="toggleMA('ma1', 'blue')"> MA50</label>
+  <label style="color: green;"><input type="checkbox" checked onchange="toggleMA('ma2', 'green')"> MA100</label>
+  <label style="color: orange;"><input type="checkbox" checked onchange="toggleMA('ma3', 'orange')"> MA200</label>
+  <label style="color: purple;"><input type="checkbox" checked onchange="toggleMA('ma4', 'purple')"> MA400</label>
+</div> -->
+
+
+      <div id="selected-symbol">📈 Select a stock to view chart</div>
+      <div id="chart-container"></div>
+
+    </div>
+  </div>
+
+  <script>
+    let chart, candlestickSeries;
+
+    function startTrading() {
+      const symbol = document.getElementById('stock-select').value;
+      if (!symbol) return alert("Please select a symbol!");
+
+      fetch('/add_symbol', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol })
+      })
+        .then(res => res.json())
+        .then(data => {
+          //alert(data.message);
+          fetchStocks();
+        });
+    }
+
+    function stopTrading(event, symbol) {
+      event.stopPropagation();
+
+      fetch('/stop_trading', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol })
+      })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+          fetchStocks();
+          startOrderTracking();
+          const selectedSymbol = document.getElementById("selected-symbol");
+          if (selectedSymbol.textContent.includes(symbol)) {
+            selectedSymbol.textContent = "📈 Select a stock to view chart";
+            document.getElementById("chart-container").innerHTML = "";
+          }
+        });
+    }
+
+    function fetchStocks() {
+      fetch('/get_active_symbols')
+        .then(res => res.json())
+        .then(data => {
+          const symbol = document.getElementById('stock-select');
+          const list = document.getElementById('stock-list');
+          list.innerHTML = '';
+          data.stocks.forEach(symbol => {
+            const div = document.createElement('div');
+            div.classList.add('stock-item');
+            div.innerHTML = `
+              <span onclick="renderChartForSymbol('${symbol}')">${symbol}</span>
+              <button class="stop-btn" onclick="stopTrading(event, '${symbol}')">Stop</button>
+            `;
+          
+            list.appendChild(div);
+          });
+        });
+    }
+
+    //  let chart, candlestickSeries;
+    let chartUpdateInterval = null; // track the interval globally
+
+    function renderChartForSymbol(symbol) {
+      const container = document.getElementById('chart-container');
+      container.innerHTML = '';
+      document.getElementById("selected-symbol").textContent = `📈 Currently Viewing: ${symbol}`;
+
+      if (chartUpdateInterval) clearInterval(chartUpdateInterval); // Clear previous updates
+
+      chart = LightweightCharts.createChart(container, {
+        layout: { backgroundColor: '#fff', textColor: '#000' },
+        grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } },
+        timeScale: { timeVisible: true, secondsVisible: true },
+        width: container.clientWidth,
+        height: container.clientHeight
+      });
+
+      candlestickSeries = chart.addCandlestickSeries(
+        {
+          priceFormat: {
+            type: 'price',
+            precision: 5,
+            minMove: 0.00001
+          }
+        }
+      );
+      function toggleMA(maKey, color) {
+        const checkbox = event.target;
+        if (maSeries[maKey]) {
+          if (checkbox.checked) {
+            maSeries[maKey].applyOptions({ color: color });
+          } else {
+            maSeries[maKey].applyOptions({ color: 'transparent' }); // Don't make invisible, just hide visually
+          }
+        }
+      }
+
+
+      function updateChart() {
+        fetch(`/get_chart_data/${symbol}`)
+          .then(res => res.json())
+          .then(data => {
+            let maSeries = {
+              ma1: null,
+              ma2: null,
+              ma3: null,
+              ma4: null
+            };
+
+            const originalColors = {
+              ma1: 'blue',
+              ma2: 'green',
+              ma3: 'orange',
+              ma4: 'purple'
+            };
+
+
+            candlestickSeries.setData(data.candles);
+            // candlestickSeries.setMarkers(data.markers);
+
+            maSeries.ma1 = chart.addLineSeries({ color: originalColors.ma1, lineWidth: 1 });
+            maSeries.ma1.setData(data.ma1);
+
+            maSeries.ma2 = chart.addLineSeries({ color: originalColors.ma2, lineWidth: 1 });
+            maSeries.ma2.setData(data.ma2);
+
+            maSeries.ma3 = chart.addLineSeries({ color: originalColors.ma3, lineWidth: 1 });
+            maSeries.ma3.setData(data.ma3);
+
+            maSeries.ma4 = chart.addLineSeries({ color: originalColors.ma4, lineWidth: 1 });
+            maSeries.ma4.setData(data.ma4);
+
+          })
+          .catch(err => console.error("Chart fetch error:", err));
+      }
+
+      updateChart(); // Initial load
+
+      chartUpdateInterval = setInterval(updateChart, 20000); // Update every 20 seconds
+
+      window.addEventListener('resize', () => {
+        chart.resize(container.clientWidth, container.clientHeight);
+      });
+
+      // Force initial resize
+      setTimeout(() => {
+        chart.resize(container.clientWidth, container.clientHeight);
+      }, 100);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // fetchStocks();
+      fetch('/get_available_symbols')
+        .then(res => res.json())
+        .then(data => {
+          const dropdown = document.getElementById('stock-select');
+          // const dropdown1 = document.getElementById('backtest-symbol');
+
+          // dropdown1.innerHTML = `<option value="" disabled selected>Select a symbol</option>`;
+
+          dropdown.innerHTML = `<option value="" disabled selected>Select a symbol</option>`;
+          data.symbols.forEach(symbol => {
+            const option = document.createElement('option');
+            const option1 = document.createElement('option');
+
+            option.value = symbol;
+            option1.value = symbol;
+
+            option.textContent = symbol;
+            option1.textContent = symbol;
+
+            dropdown.appendChild(option);
+            // dropdown1.appendChild(option1);
+
+          });
+        })
+        .catch(err => console.error("Error loading symbols:", err));
+    });
+  </script>
+<script>
+
+
+</script>
+
+ 
+
+  <style>
+    .order-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+  
+
+    .tab-pane {
+      background: white;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .order-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .order-table th,
+    .order-table td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .order-table th {
+      background-color: #f8f8f8;
+    }
+  </style>
+
+  <script>
+    let orderInterval = null;
+    let currentTab = 'open';
+    let lastOpenOrders = [];
+    let lastClosedOrders = [];
+    let lastPerformance = {};
+
+
+
+  
+
+  </script>
+
+
+</body>
+
+</html>
