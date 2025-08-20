@@ -1,0 +1,3 @@
+timestamp,ticker,expiry,strike,premium,orderStatus,clientId,permId,reasonCancelled
+2025-08-20T14:01:17.567400+05:30,AAPL,20250822,230.0,1.0,Cancelled,2,0,Cancelled by timeout
+2025-08-20T14:04:20.157161+05:30,AAPL,20250822,230.0,1.0,Cancelled,2,0,Cancelled by timeout
