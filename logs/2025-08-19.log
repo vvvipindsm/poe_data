@@ -37,3 +37,6 @@
 2025-08-19 22:19:13,972 - IBClient - INFO - ✅ Connected to IB Gateway
 2025-08-19 22:19:56,351 - IBClient - INFO - ✅ Connected to IB Gateway
 2025-08-19 22:20:01,969 - main - INFO - Intial - APPLE
+2025-08-19 22:34:29,449 - IBClient - INFO - ✅ Connected to IB Gateway
+2025-08-19 22:34:37,456 - DataHandler - INFO - Saved option historical data for AAPL (conId=796805148) with 0 rows → data/AAPL_OPT_796805148.csv
+2025-08-19 22:34:37,456 - main - INFO - Intial - APPLE
