@@ -1,52 +1,66 @@
-from src.data_handler import DataHandler
-from src.ib_client import TradeManager
-from datetime import datetime, timedelta
-from src.ib_client import IBClient
+from src.ib_client import IBClient, TradeManager
+from datetime import datetime
+from ib_insync import IB, Option
+import config
 
-def main() -> None:
-
-    # Initialize and connect IB client
+def main():
+    # Connect to IB
     ib_client = IBClient()
     ib_client.connect()
+    ib = ib_client.ib
 
     tm = TradeManager(ib_client)
-    # Initialize DataHandler with IB client
-    data_handler = DataHandler(ib_client)
 
-    # Fetch AAPL option chain and select candidate short put
-    # res = data_handler.fetch_aapl_options_and_select_csp(min_unique_strikes=10)
-    res  = {
-        'symbol': 'AAPL',
-        'expiry': datetime(2025, 8, 22).date(),
-        'right': 'P',
-        'strike': 230.0,
-        'last': 2.0,
-        'bid': 1.0,
-        'ask': 1.0,
-        'mid': 1,
-        'iv': 0.0078,
+    # Build raw contract for AAPL put
+    symbol = "AAPL"
+    strike = 230.0
+    right = "P"
+    expiry_input = datetime(2025, 9, 26).strftime("%Y%m%d")  # initial requested expiry
+
+    contract = Option(
+        symbol=symbol,
+        lastTradeDateOrContractMonth=expiry_input,
+        strike=strike,
+        right=right,
+        exchange="SMART",
+        currency="USD"
+    )
+
+    # Qualify contract with IB
+    qualified_contracts = ib.qualifyContracts(contract)
+  
+    if not qualified_contracts:
+        raise Exception("No qualified contract returned")
+    qualified_contract = qualified_contracts[0]
+
+    print("✅ Qualified contract expiry:", qualified_contract.lastTradeDateOrContractMonth)
+    print("✅ ConId:", qualified_contract.conId)
+   
+    # Prepare order data using qualified contract
+    mid_price = 5.00  # example price
+    res = {
+        'symbol': symbol,
+        'expiry': qualified_contract.lastTradeDateOrContractMonth,
+        'right': right,
+        'strike': strike,
+        'mid': mid_price,
         'qty': 1,
-        'cash_required': 23000.0,
-        'conId': None
+        'conId': qualified_contract.conId
     }
-    mid_price = 1.25
+  
 
-    mid_price = res.get("mid") or (res["bid"] + res["ask"]) / 2 if res["bid"] and res["ask"] else None
-    
-    if mid_price:
-        order_result = tm.place_option_limit_and_wait_cancel(
-            ticker=res["symbol"],
-            expiry=res["expiry"].strftime("%Y%m%d"),
-            strike=res["strike"],
-            right=res["right"],
-            quantity=res["qty"],
-            limit_price=mid_price,
-            wait_seconds=5
-        )
-        
-        print(order_result)
-    else:
-        print("⚠️ Could not determine mid price.")
+    # Place order using TradeManager
+    order_result = tm.place_option_limit_and_wait_cancel(
+        ticker=res['symbol'],
+        expiry=res['expiry'],
+        strike=res['strike'],
+        right=res['right'],
+        quantity=res['qty'],
+        limit_price=res['mid'],
+        wait_seconds=5
+    )
+
+    print("Order Result:", order_result)
 
 
 if __name__ == "__main__":
